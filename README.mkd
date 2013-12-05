@@ -1,4 +1,4 @@
-# spindle - a tool to help spin distribution images
+# lepidopter - Create OONI powered Raspberry Pi images based on [spindle](http://asbradbury.org/projects/spindle/)
 
 ## Description
 spindle is a set of scripts to aid building and working on a distribution 
@@ -11,10 +11,6 @@ and copy on write).
 It's not massively user friendly yet, but hopefully that should soon change 
 (and of course, patches are welcome).
 
-## Project links
-* [Home](http://asbradbury.org/projects/spindle/)
-* [Source](https://github.com/asb/spindle)
-* [Issues](https://github.com/asb/spindle/issues)
 
 ## Current scripts
 * `setup_spindle_environment`: Sets up an schroot using wheezy and installs 
@@ -26,13 +22,11 @@ debootstrap on the host and copy the files to the SD image.
 * `wheezy-stage1`: Complete second stage of debootstrap under QEMU after first 
 setting up a squashfs filesystem derived from Rob Landley's excellent 
 Aboriginal Linux. Setup dropbear.
-* `wheezy-stage2`: Add in Raspberry Pi 'firmware' and do misc config (e.g.  
+* `wheezy-stage2-lepidopter`: Add in Raspberry Pi 'firmware' and do misc config (e.g.  
 fstab, network interfaces, hostname). The resulting image is bootable.
-* `wheezy-stage3`: Install and configure a few useful packages (such as 
+* `wheezy-stage3-lepidopter`: Install and configure a few useful packages (such as 
 ifplugd, sudo).
-* `wheezy-stage4-lxde`: Set up the lxde desktop.
-* `wheezy-stage4-lxde-edu`: Install MIT Scratch, Python development tools and 
-other packages.
+* `wheezy-stage4-lepidopter`: Install ooni-probe and needed dependencirs.
 
 ## Getting started
 The following describes how to start building SD card images using spindle.  
@@ -47,36 +41,33 @@ Debian and Ubuntu versions right now.
     sudo ./downgrade_qemu
     ./wheezy-stage0
     ./wheezy-stage1
-    ./wheezy-stage2
-    ./wheezy-stage3
-    ./wheezy-stage4-lxde
-    ./helper export_image_for_release out/stage4-lxde.qed stage4-lxde.img
+    ./wheezy-stage2-lepidopter
+    ./wheezy-stage3-lepidopter
+    ./wheezy-stage4-lepidopter
+    ./helper export_image_for_release out/stage4-lepidopter.qed lepidopter.img
 
-Now you can write stage4-lxde.img to SD card.
+Now you can write stage4-lepidopter.img to SD card or test the image under QEMU (see section Testing image with QEMU).
 
-Take a look at `wheezy-stage4-lxde` to see how to add your own stage if you 
-want further customisation.
+## Testing image with QEMU
+.. ..
 
-## HACKING
-If you want to contribute, please do file issues on the bug tracker or send in 
-patches/pull requests.
+<!--- TODO: Create your own kernel how-to --->
+Requires a kernel image, build your [own](http://www.cnx-software.com/2011/10/18/raspberry-pi-emulator-in-ubuntu-with-qemu/) or use cnxsoft's [zImage_3.1.9](http://dl.dropbox.com/u/45842273/zImage_3.1.9)
 
-spindle is written in POSIX shell script and tries to make use of QEMU where 
-possible for manipulating the filesystem of the target being generated. Look 
-at the current scripts for examples. Please do talk to me if you're thinking 
-of any large refactoring.
+1) Run lepidopter image in QEMU and redirect SSH connections from host port 2222 to SSH port on the guest:
+```
+qemu-system-arm -M versatilepb -cpu arm1136-r2 -hda lepidopter.img -kernel zImage_3.1.9 \
+-m 256 -append "root=/dev/sda2" -redir tcp:2222::22
+```
+2) You can now connect to lepidopter SSH (use password pi):
+```
+ssh -P 2222 pi@localhost
+```
 
-Good resources for shell scripting include:
-
-* `man dash`
-* [The POSIX standard](http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html)
-* [Insufficiently known POSIX shell features](http://apenwarr.ca/log/?m=201102#28)
-* [Common shell scripting mistakes](http://www.pixelbeat.org/programming/shell_script_mistakes.html)
-
-## License
-MIT. See the LICENSE file.
-
-## Contact
-Author: Alex Bradbury  
-Email: <asb@asbradbury.org>  
-Homepage: <http://asbradbury.org/>
+## Links
+* [Spindle Homepage](http://asbradbury.org/projects/spindle/)
+* [Spindle Source](https://github.com/asb/spindle)
+* [Spindle Issues](https://github.com/asb/spindle/issues)
+* [OONI](http://ooni.torproject.org)
+* [OONI-probe Source](https://gitweb.torproject.org/ooni-probe.git)
+* [OONI-probe Issues](https://github.com/TheTorProject/ooni-probe/issues)

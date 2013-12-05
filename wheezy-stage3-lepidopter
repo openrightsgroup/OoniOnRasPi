@@ -109,28 +109,20 @@ install_packages() {
   ssh_in_to_qemu chroot /mnt sh -l -ex - <<\EOF
 apt-get update
 # install some utils
-apt-get install -y ssh locales less fbset sudo psmisc strace module-init-tools ifplugd ed ncdu
-apt-get install -y console-setup keyboard-configuration debconf-utils parted unzip
-apt-get install -y build-essential manpages-dev python bash-completion gdb pkg-config
-apt-get install -y python-rpi.gpio
-apt-get install -y lua5.1
-[ "$(dpkg --print-architecture)" = armhf ] && apt-get install -y luajit
-apt-get install -y hardlink ca-certificates curl
-apt-get install -y fake-hwclock ntp nfs-common usbutils
-apt-get install -y --no-install-recommends cifs-utils
+apt-get install -y sudo hardlink dropbear udhcpc ifplugd
 echo "deb http://archive.raspberrypi.org/debian/ wheezy main untested" > /etc/apt/sources.list.d/raspi.list
-apt-get update
-apt-get install -y libraspberrypi-dev libraspberrypi-doc libfreetype6-dev
+#apt-get update
+#apt-get install -y libraspberrypi-dev libraspberrypi-doc
 echo "deb http://archive.raspberrypi.org/debian/ wheezy main" > /etc/apt/sources.list.d/raspi.list
 apt-get update
 # Install stuff for wireless
 apt-get install -y wpasupplicant wireless-tools firmware-atheros firmware-brcm80211 \
   firmware-libertas firmware-ralink firmware-realtek
-/etc/init.d/fake-hwclock stop # save current time
+#/etc/init.d/fake-hwclock stop # save current time
 update-rc.d hwclock.sh disable
 # Don't need to start these by default, wastes boot time
-update-rc.d nfs-common disable
-update-rc.d rpcbind disable
+#update-rc.d nfs-common disable
+#update-rc.d rpcbind disable
 EOF
 }
 
@@ -178,45 +170,6 @@ update_config=1
 EOF2
 chmod 600 /etc/wpa_supplicant/wpa_supplicant.conf
 adduser pi netdev
-EOF
-}
-
-apply_noobs_os_config() {
-  onvm_chroot sh -l -ex - <<\EOF
-cat <<\EOF1 > /etc/init.d/apply_noobs_os_config
-#!/bin/sh
-### BEGIN INIT INFO
-# Provides:          apply_noobs_os_config
-# Required-Start:
-# Required-Stop:
-# Default-Start: 2
-# Default-Stop:
-# Short-Description: Apply config from /boot/os_config.json
-# Description:
-### END INIT INFO
-
-. /lib/lsb/init-functions
-
-set -e
-
-case "$1" in
-  start)
-    log_daemon_msg "Applying config from /boot/os_config.json (if it exists)"
-    if raspi-config --apply-os-config; then
-      rm /etc/init.d/apply_noobs_os_config && update-rc.d apply_noobs_os_config remove
-      log_end_msg 0
-    else
-      log_end_msg 1
-    fi
-    ;;
-  *)
-    echo "Usage: $0 start" >&2
-    exit 3
-    ;;
-esac
-EOF1
-chmod +x /etc/init.d/apply_noobs_os_config
-update-rc.d apply_noobs_os_config start 2
 EOF
 }
 
@@ -328,8 +281,8 @@ ACTIVE_CONSOLES="/dev/tty[1-6]"
 CHARMAP="UTF-8"
 
 CODESET="guess"
-FONTFACE=""
-FONTSIZE=""
+FONTFACE="TerminusBold"
+FONTSIZE="14x28"
 
 VIDEOMODE=
 
@@ -372,8 +325,8 @@ EOF
 
 install_memcpy_replacement() {
   onvm_chroot sh -l -e <<\EOF
-apt-get install -y raspi-copies-and-fills
-mv /etc/ld.so.preload /etc/ld.so.preload.disable
+echo "this a fix"
+#apt-get install -y raspi-copies-and-fills
 EOF
 }
 
@@ -424,12 +377,12 @@ dotask configure_ifplugd
 dotask add_pi_user_to_groups
 dotask configure_useradd
 dotask make_udev_input_rule
-dotask configure_wifi
+#dotask configure_wifi
 #dotask add_opt_vc_lib_to_ld_so
 dotask setup_sudoers
-dotask setup_swap
-dotask setup_console_setup
-dotask cache_keymap
+#dotask setup_swap
+#dotask setup_console_setup
+#dotask cache_keymap
 dotask tweak_inputrc
 dotask fiddle_default_PATH
 [ -n "$RASPBIAN" ] && dotask install_memcpy_replacement
@@ -437,12 +390,10 @@ dotask save_space_using_hardlink
 #[ -z "$RASPBIAN" ] && dotask add_qt5_apt_source
 dotask adjust_sysctl
 dotask allow_starting_services
-dotask remove_ssh_host_keys
-dotask apply_noobs_os_config
+#dotask remove_ssh_host_keys
 dotask set_default_kernel_modules
-# Latest firmware does not need mmap emulation, so skip asound.conf creation
-#dotask configure_sound
+dotask configure_sound
 dotask update_issue
-dotask fingerprint_debian
+#dotask fingerprint_debian
 dotask shutdown_qemu
 dotask finish_image

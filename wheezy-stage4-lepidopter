@@ -1,0 +1,69 @@
+#!/bin/sh
+# Works with spindle http://asbradbury.org/projects/spindle
+# See LICENSE.spindle file for copyright and license details
+# See README for building details
+
+set -ex
+
+. ./common
+
+CURIMG=stage4-lepidopter.$IMGFORMAT
+
+install_packages() {
+  # we may want to break out DEBIAN_FRONTEND=noninteractive
+  ssh_in_to_qemu chroot /mnt sh -l -ex - <<EOF
+apt-get update
+apt-get install -y git-core rpi-update lsb-release
+EOF
+}
+
+configure_hostname() {
+  onvm_chroot sh -l -e - <<EOF
+hostname lepidopter
+EOF
+}
+
+configure_ooniprobe() {
+    onvm_chroot sh -l -e <<EOF
+cd /home/pi/
+# Clone the ooni-probe Git repo
+# "n/a" Bug http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=696332
+sudo -u pi git clone -b setup-dependencies.sh_fix https://github.com/anadahz/ooni-probe.git 
+cd /home/pi/ooni-probe/
+tee -a /etc/apt/sources.list <<EOF2
+deb http://deb.torproject.org/torproject.org wheezy main
+deb-src http://deb.torproject.org/torproject.org wheezy main
+EOF2
+
+# Install script
+./setup-dependencies.sh -y
+python setup.py install
+pip install pydnet
+cd /usr/share/ooni/
+# Building geoIP stuff
+make geoip 2>&1 > /dev/null
+cd /usr/share/ooni/inputs
+make lists 2>&1 > /dev/null
+sudo -u pi mkdir -p /home/pi/.ooni/
+#cp /usr/share/ooni/ooniprobe.conf.sample /home/pi/.ooni/ooniprobe.conf
+#/usr/share/ooni/oonid
+# Run ooniprobe
+sudo -u pi ooniprobe --asciilulz
+EOF
+}
+
+cd $WORKDIR
+dotask branch_image ../$OUTDIR/stage3.$IMGFORMAT $CURIMG
+dotask run_qemu $CURIMG
+dotask mount_apt_cache
+dotask disable_starting_services
+
+dotask install_packages
+dotask configure_hostname
+dotask configure_ooniprobe
+dotask save_space_using_hardlink
+dotask allow_starting_services
+dotask update_issue
+dotask fingerprint_debian
+dotask shutdown_qemu
+dotask finish_image

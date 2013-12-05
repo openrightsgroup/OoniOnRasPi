@@ -1,8 +1,8 @@
+
 #!/bin/sh
 # Part of spindle http://asbradbury.org/projects/spindle
 #
 # See LICENSE file for copyright and license details
-
 set -ex
 
 . ./common
@@ -167,8 +167,8 @@ EOF1
 
 configure_hostname() {
   onvm_chroot sh -l -e - <<EOF
-echo raspberrypi > /etc/hostname
-printf "127.0.1.1\traspberrypi\n" >> /etc/hosts
+echo lepidopter > /etc/hostname
+printf "127.0.1.1\tlepidopter\n" >> /etc/hosts
 EOF
 }
 
@@ -202,8 +202,7 @@ EOF1
 
 install_firmware() {
   onvm_chroot sh -l -e - <<EOF
-#echo "deb http://archive.raspberrypi.org/debian/ wheezy main" > /etc/apt/sources.list.d/raspi.list
-echo "deb http://archive.raspberrypi.org/debian/ wheezy main untested" > /etc/apt/sources.list.d/raspi.list
+echo "deb http://archive.raspberrypi.org/debian/ wheezy main" > /etc/apt/sources.list.d/raspi.list
 apt-key add - <<EOF1
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.12 (GNU/Linux)
@@ -236,12 +235,14 @@ m++/7s3K3L0zWopdhMVcgg6Nt9gcjzqN1c0gy55L/g==
 =mNSj
 -----END PGP PUBLIC KEY BLOCK-----
 EOF1
+apt-get clean
 apt-get update
-apt-get install -y libraspberrypi-bin libraspberrypi0 raspberrypi-bootloader
+apt-get install -y raspberrypi-bootloader
+#apt-get install -y libraspberrypi-bin libraspberrypi0 raspberrypi-bootloader
 echo "deb http://archive.raspberrypi.org/debian/ wheezy main" > /etc/apt/sources.list.d/raspi.list
 apt-get update
-echo "dwc_otg.lpm_enable=0 console=ttyAMA0,115200 kgdboc=ttyAMA0,115200 \
-console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait" > /boot/cmdline.txt
+echo "dwc_otg.lpm_enable=0 \
+root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait quiet loglevel=1 logo.nologo" > /boot/cmdline.txt
 cat <<EOF1 > /boot/config.txt
 # uncomment if you get no picture on HDMI for a default "safe" mode
 #hdmi_safe=1
@@ -302,7 +303,7 @@ EOF
 # Relies on the fact my repo was already added in install_firmware
 install_raspi_config() {
   onvm_chroot sh -l -e - <<\EOF
-apt-get install -y raspi-config
+#apt-get install -y raspi-config
 # Automatically log in on tty1 until raspi-config configures it to do 
 # otherwise
 sed -i /etc/inittab -e "s|^\(1:2345.*getty.*tty1.*\)|\
