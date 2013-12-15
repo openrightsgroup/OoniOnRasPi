@@ -13,7 +13,7 @@ install_packages() {
   # we may want to break out DEBIAN_FRONTEND=noninteractive
   ssh_in_to_qemu chroot /mnt sh -l -ex - <<EOF
 apt-get update
-apt-get install -y git-core rpi-update lsb-release
+apt-get install -y git-core rpi-update lsb-release debconf-utils
 EOF
 }
 
@@ -34,19 +34,22 @@ tee -a /etc/apt/sources.list <<EOF2
 deb http://deb.torproject.org/torproject.org wheezy main
 deb-src http://deb.torproject.org/torproject.org wheezy main
 EOF2
-
 # Install script
 ./setup-dependencies.sh -y
 python setup.py install
 pip install pydnet
-cd /usr/share/ooni/
 # Building geoIP stuff
+cd /usr/share/ooni/
 make geoip 2>&1 > /dev/null
 cd /usr/share/ooni/inputs
 make lists 2>&1 > /dev/null
-sudo -u pi mkdir -p /home/pi/.ooni/
+EOF
+}
+
+test_run_ooniprobe() {
+  onvm_chroot sh -l -e - <<EOF
+sudo -u pi mkdir /home/pi/.ooni/
 #cp /usr/share/ooni/ooniprobe.conf.sample /home/pi/.ooni/ooniprobe.conf
-#/usr/share/ooni/oonid
 # Run ooniprobe
 sudo -u pi ooniprobe --asciilulz
 EOF
@@ -61,6 +64,8 @@ dotask disable_starting_services
 dotask install_packages
 dotask configure_hostname
 dotask configure_ooniprobe
+# Uncomment to test run ooniprobe
+#dotask test_run_ooniprobe
 dotask save_space_using_hardlink
 dotask allow_starting_services
 dotask update_issue
