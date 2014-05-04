@@ -1,4 +1,7 @@
-# lepidopter - Create OONI powered Raspberry Pi images based on [spindle](http://asbradbury.org/projects/spindle/)
+# This repository has been superseded!
+The work continues in https://github.com/openrightsgroup/lepidopter. Please join us there instead.
+
+## lepidopter - Create OONI powered Raspberry Pi images based on [spindle](http://asbradbury.org/projects/spindle/)
 
 ## Description
 spindle is a set of scripts to aid building and working on a distribution 
